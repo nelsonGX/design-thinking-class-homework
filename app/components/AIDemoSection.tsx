@@ -26,26 +26,62 @@ export default function AIDemoSection() {
 
 function RouteOptimizationDemo() {
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [stats, setStats] = useState({ time: 45, distance: 120 });
+  const [stats, setStats] = useState({ time: 45, distance: 120, co2: 15.2, fuel: 8.5 });
   const [path, setPath] = useState<'normal' | 'optimized'>('normal');
+  const [selectedMode, setSelectedMode] = useState<'fastest' | 'eco' | 'safe'>('fastest');
+  const [weather, setWeather] = useState<'sunny' | 'rainy' | 'stormy'>('sunny');
+  const [traffic, setTraffic] = useState<'low' | 'medium' | 'high'>('medium');
 
   const handleOptimize = () => {
     setIsOptimizing(true);
     setPath('normal');
 
-    // Simulate calculation
+    // Simulate calculation based on factors
     setTimeout(() => {
       setPath('optimized');
-      setStats({ time: 32, distance: 98 });
+      let baseTime = 30;
+      let baseCo2 = 10;
+
+      // Weather impact
+      if (weather === 'rainy') { baseTime *= 1.2; baseCo2 *= 1.1; }
+      if (weather === 'stormy') { baseTime *= 1.5; baseCo2 *= 1.3; }
+
+      // Traffic impact
+      if (traffic === 'medium') { baseTime *= 1.3; baseCo2 *= 1.4; }
+      if (traffic === 'high') { baseTime *= 1.8; baseCo2 *= 2.0; }
+
+      // Mode impact
+      if (selectedMode === 'fastest') {
+        setStats({
+          time: Math.round(baseTime),
+          distance: 98,
+          co2: parseFloat((baseCo2 * 1.2).toFixed(1)),
+          fuel: 7.2
+        });
+      } else if (selectedMode === 'eco') {
+        setStats({
+          time: Math.round(baseTime * 1.2),
+          distance: 95,
+          co2: parseFloat((baseCo2).toFixed(1)),
+          fuel: 6.1
+        });
+      } else {
+        setStats({
+          time: Math.round(baseTime * 1.1),
+          distance: 105,
+          co2: parseFloat((baseCo2 * 1.1).toFixed(1)),
+          fuel: 7.5
+        });
+      }
       setIsOptimizing(false);
-    }, 2000);
+    }, 1500);
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-white border border-purple-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+    <div className="group relative overflow-hidden rounded-xl bg-white border border-purple-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
       <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-purple-50 rounded-full blur-2xl group-hover:bg-purple-100 transition-colors"></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
@@ -56,6 +92,51 @@ function RouteOptimizationDemo() {
             <h3 className="font-bold text-gray-900">AI 動態路徑預測</h3>
           </div>
           {isOptimizing && <span className="text-xs font-mono text-purple-600 animate-pulse">CALCULATING...</span>}
+        </div>
+
+        {/* Controls */}
+        <div className="space-y-3 mb-4">
+          {/* Mode Selection */}
+          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            {[
+              { id: 'fastest', label: '最快' },
+              { id: 'eco', label: '節能' },
+              { id: 'safe', label: '安全' }
+            ].map(mode => (
+              <button
+                key={mode.id}
+                onClick={() => setSelectedMode(mode.id as any)}
+                className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${selectedMode === mode.id
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Environment Factors */}
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={weather}
+              onChange={(e) => setWeather(e.target.value as any)}
+              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:border-purple-400"
+            >
+              <option value="sunny">☀️ 晴朗</option>
+              <option value="rainy">🌧️ 雨天</option>
+              <option value="stormy">⛈️ 暴雨</option>
+            </select>
+            <select
+              value={traffic}
+              onChange={(e) => setTraffic(e.target.value as any)}
+              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 focus:outline-none focus:border-purple-400"
+            >
+              <option value="low">🟢 車流順暢</option>
+              <option value="medium">🟡 車流普通</option>
+              <option value="high">🔴 車流壅塞</option>
+            </select>
+          </div>
         </div>
 
         {/* Map Visualization */}
@@ -69,6 +150,11 @@ function RouteOptimizationDemo() {
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
 
+            {/* Weather Overlay */}
+            {weather !== 'sunny' && (
+              <rect width="100%" height="100%" fill={weather === 'stormy' ? 'rgba(0,0,50,0.1)' : 'rgba(0,0,20,0.05)'} />
+            )}
+
             {/* Nodes */}
             <circle cx="20" cy="100" r="4" className="fill-gray-400" /> {/* Start */}
             <circle cx="180" cy="20" r="4" className="fill-gray-400" /> {/* End */}
@@ -80,7 +166,7 @@ function RouteOptimizationDemo() {
             <path
               d="M 20 100 Q 80 40 100 60 T 180 20"
               fill="none"
-              stroke="#cbd5e1"
+              stroke={traffic === 'high' ? '#fca5a5' : traffic === 'medium' ? '#fcd34d' : '#cbd5e1'}
               strokeWidth="2"
               strokeDasharray="4 4"
               className={`transition-all duration-500 ${path === 'optimized' ? 'opacity-30' : 'opacity-100'}`}
@@ -110,71 +196,97 @@ function RouteOptimizationDemo() {
           </svg>
 
           <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs border border-gray-200 shadow-sm">
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">預估時間</span>
-              <span className={`font-mono font-bold ${path === 'optimized' ? 'text-green-600' : 'text-gray-900'}`}>
-                {stats.time} min
-              </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">預估時間</span>
+                <span className={`font-mono font-bold ${path === 'optimized' ? 'text-green-600' : 'text-gray-900'}`}>
+                  {stats.time} min
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">碳排放</span>
+                <span className={`font-mono font-bold ${path === 'optimized' ? 'text-green-600' : 'text-gray-900'}`}>
+                  {stats.co2} kg
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <button
-          onClick={handleOptimize}
-          disabled={isOptimizing}
-          className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-        >
-          {isOptimizing ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              正在分析路況...
-            </>
-          ) : (
-            '執行路徑優化'
-          )}
-        </button>
+        <div className="mt-auto">
+          <button
+            onClick={handleOptimize}
+            disabled={isOptimizing}
+            className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            {isOptimizing ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                正在分析路況...
+              </>
+            ) : (
+              '執行路徑優化'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 function SmartLoadingDemo() {
-  const [items, setItems] = useState<Array<{ id: number, w: number, color: string }>>([]);
+  const [items, setItems] = useState<Array<{ id: number, w: number, color: string, type: string }>>([]);
   const [isPacking, setIsPacking] = useState(false);
   const [efficiency, setEfficiency] = useState(65);
+  const [balance, setBalance] = useState(50); // 50 is perfect center
+  const [containerType, setContainerType] = useState<'20ft' | '40ft'>('20ft');
 
   const generateItems = () => {
     setIsPacking(true);
     setItems([]);
     setEfficiency(65);
+    setBalance(50);
 
     let count = 0;
+    const maxItems = containerType === '20ft' ? 12 : 20;
+    const targetEfficiency = containerType === '20ft' ? 94 : 96;
+
     const interval = setInterval(() => {
-      if (count >= 12) {
+      if (count >= maxItems) {
         clearInterval(interval);
         setIsPacking(false);
-        setEfficiency(94);
+        setEfficiency(targetEfficiency);
+        setBalance(48 + Math.random() * 4); // Random final balance close to 50
         return;
       }
+
+      const isHeavy = Math.random() > 0.7;
+      const isFragile = Math.random() > 0.8;
+
+      let color = 'bg-blue-400';
+      if (isHeavy) color = 'bg-slate-600';
+      if (isFragile) color = 'bg-amber-400';
 
       setItems(prev => [...prev, {
         id: Math.random(),
         w: Math.random() > 0.5 ? 2 : 1,
-        color: ['bg-blue-400', 'bg-blue-500', 'bg-indigo-400', 'bg-cyan-400'][Math.floor(Math.random() * 4)]
+        color: color,
+        type: isHeavy ? 'heavy' : isFragile ? 'fragile' : 'standard'
       }]);
-      setEfficiency(prev => Math.min(94, prev + 2));
+
+      setEfficiency(prev => Math.min(targetEfficiency, prev + (targetEfficiency - 65) / maxItems));
       count++;
     }, 150);
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-white border border-blue-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+    <div className="group relative overflow-hidden rounded-xl bg-white border border-blue-100 p-6 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
       <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:bg-blue-100 transition-colors"></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
@@ -187,9 +299,34 @@ function SmartLoadingDemo() {
           <div className="text-right">
             <div className="text-xs text-gray-500">空間利用率</div>
             <div className={`font-mono font-bold ${efficiency > 90 ? 'text-green-600' : 'text-blue-600'}`}>
-              {efficiency}%
+              {efficiency.toFixed(1)}%
             </div>
           </div>
+        </div>
+
+        {/* Container Type Selection */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setContainerType('20ft')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${containerType === '20ft' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+          >
+            20呎標準櫃
+          </button>
+          <button
+            onClick={() => setContainerType('40ft')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${containerType === '40ft' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+          >
+            40呎高櫃
+          </button>
+        </div>
+
+        {/* Legend */}
+        <div className="flex gap-3 mb-2 text-[10px] text-gray-500">
+          <div className="flex items-center gap-1"><div className="w-2 h-2 bg-blue-400 rounded"></div>一般</div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 bg-slate-600 rounded"></div>重物(底部)</div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 bg-amber-400 rounded"></div>易碎(頂部)</div>
         </div>
 
         {/* Container Visualization */}
@@ -197,24 +334,37 @@ function SmartLoadingDemo() {
           {items.map((item) => (
             <div
               key={item.id}
-              className={`${item.color} h-10 rounded shadow-sm border border-white/20 animate-[bounce_0.5s]`}
+              className={`${item.color} h-10 rounded shadow-sm border border-white/20 animate-[bounce_0.5s] flex items-center justify-center text-[10px] text-white/80`}
               style={{ width: item.w === 2 ? 'calc(50% - 4px)' : 'calc(25% - 4px)' }}
-            ></div>
+            >
+              {item.type === 'heavy' && '⚖️'}
+              {item.type === 'fragile' && '🥚'}
+            </div>
           ))}
           {items.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
               等待裝載...
             </div>
           )}
+
+          {/* Balance Indicator */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-200">
+            <div
+              className={`h-full transition-all duration-300 ${Math.abs(balance - 50) < 5 ? 'bg-green-500' : 'bg-red-500'}`}
+              style={{ width: '10%', left: `${balance - 5}%`, position: 'absolute' }}
+            ></div>
+          </div>
         </div>
 
-        <button
-          onClick={generateItems}
-          disabled={isPacking}
-          className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          {isPacking ? '正在計算最佳堆疊...' : '開始模擬裝載'}
-        </button>
+        <div className="mt-auto">
+          <button
+            onClick={generateItems}
+            disabled={isPacking}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            {isPacking ? '正在計算最佳堆疊...' : '開始模擬裝載'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -223,22 +373,36 @@ function SmartLoadingDemo() {
 function AnomalyDetectionDemo() {
   const [isScanning, setIsScanning] = useState(true);
   const [anomalyDetected, setAnomalyDetected] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [camera, setCamera] = useState('CAM_01');
+  const [sensitivity, setSensitivity] = useState(85);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!anomalyDetected) {
+        setLogs(prev => [`掃描正常 - ${new Date().toLocaleTimeString()}`, ...prev].slice(0, 3));
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [anomalyDetected]);
 
   const toggleSimulation = () => {
     setAnomalyDetected(false);
     setIsScanning(true);
+    setLogs([]);
 
     // Randomly trigger anomaly after 1-3 seconds
     setTimeout(() => {
       setAnomalyDetected(true);
+      setLogs(prev => [`⚠️ 偵測到異常活動 (${camera}) - ${new Date().toLocaleTimeString()}`, ...prev].slice(0, 3));
     }, Math.random() * 2000 + 1000);
   };
 
   return (
-    <div className={`group relative overflow-hidden rounded-xl bg-white border p-6 shadow-lg hover:shadow-2xl transition-all duration-300 ${anomalyDetected ? 'border-red-500 ring-2 ring-red-100' : 'border-red-100'}`}>
+    <div className={`group relative overflow-hidden rounded-xl bg-white border p-6 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col h-full ${anomalyDetected ? 'border-red-500 ring-2 ring-red-100' : 'border-red-100'}`}>
       <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors"></div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg transition-colors ${anomalyDetected ? 'bg-red-600 text-white animate-pulse' : 'bg-red-100 text-red-600'}`}>
@@ -249,6 +413,38 @@ function AnomalyDetectionDemo() {
             <h3 className="font-bold text-gray-900">異常行為預警</h3>
           </div>
           {anomalyDetected && <span className="text-xs font-bold text-red-600 animate-ping">ALERT</span>}
+        </div>
+
+        {/* Controls */}
+        <div className="flex gap-2 mb-4">
+          <select
+            value={camera}
+            onChange={(e) => setCamera(e.target.value)}
+            className="text-xs border border-gray-200 rounded px-2 py-1 bg-white text-gray-600 flex-1"
+          >
+            <option value="CAM_01">CAM_01 大門入口</option>
+            <option value="CAM_02">CAM_02 倉庫B區</option>
+            <option value="CAM_03">CAM_03 卸貨碼頭</option>
+          </select>
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <span>敏銳度:</span>
+            <input
+              type="range"
+              min="50"
+              max="100"
+              value={sensitivity}
+              onChange={(e) => setSensitivity(parseInt(e.target.value))}
+              className="w-16 accent-red-500"
+            />
+          </div>
+        </div>
+
+        {/* Logs */}
+        <div className="mb-4 bg-gray-50 rounded p-2 text-xs font-mono text-gray-500 h-16 overflow-hidden">
+          {logs.map((log, i) => (
+            <div key={i} className={log.includes('⚠️') ? 'text-red-600 font-bold' : ''}>{log}</div>
+          ))}
+          {logs.length === 0 && <div>系統待命中...</div>}
         </div>
 
         {/* Camera Feed Visualization */}
@@ -270,7 +466,7 @@ function AnomalyDetectionDemo() {
           {anomalyDetected && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-red-500 bg-red-500/10 flex items-center justify-center">
               <div className="absolute -top-6 left-0 bg-red-600 text-white text-[10px] px-1 py-0.5 font-mono">
-                CONFIDENCE: 99.8%
+                CONFIDENCE: {(sensitivity + Math.random() * 5).toFixed(1)}%
               </div>
               <div className="w-full h-full flex items-center justify-center">
                 <svg className="w-12 h-12 text-red-500 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,16 +482,18 @@ function AnomalyDetectionDemo() {
           )}
 
           <div className="absolute bottom-2 left-2 text-[10px] font-mono text-green-500">
-            CAM_04_GATE_A • {new Date().toLocaleTimeString()}
+            {camera} • {new Date().toLocaleTimeString()}
           </div>
         </div>
 
-        <button
-          onClick={toggleSimulation}
-          className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${anomalyDetected ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-red-600 hover:bg-red-700 text-white'}`}
-        >
-          {anomalyDetected ? '重置系統' : '模擬入侵測試'}
-        </button>
+        <div className="mt-auto">
+          <button
+            onClick={toggleSimulation}
+            className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${anomalyDetected ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+          >
+            {anomalyDetected ? '重置系統' : '模擬入侵測試'}
+          </button>
+        </div>
       </div>
     </div>
   );

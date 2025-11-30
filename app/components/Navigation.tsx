@@ -19,6 +19,12 @@ export default function Navigation() {
 
             <div className="flex gap-1">
               <Link
+                href="/ai-lab"
+                className={`px-3 py-2 text-sm ${isActive('/ai-lab') ? 'text-gray-900 border-b-2 border-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                AI實驗室
+              </Link>
+              <Link
                 href="/ground-staff"
                 className={`px-3 py-2 text-sm ${isActive('/ground-staff') ? 'text-gray-900 border-b-2 border-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
