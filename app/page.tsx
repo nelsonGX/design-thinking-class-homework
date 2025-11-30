@@ -68,6 +68,17 @@ export default function Home() {
       link: '/history',
       color: 'bg-red-500',
     },
+    {
+      title: '未來智能實驗室',
+      description: 'AI 路徑預測、3D 裝載模擬、異常偵測',
+      icon: (
+        <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+      ),
+      link: '/ai-lab',
+      color: 'bg-indigo-500',
+    },
   ];
 
   return (
@@ -118,7 +129,7 @@ export default function Home() {
         </Card>
 
         {/* 系統特色 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           <Card>
             <h4 className="font-medium text-gray-900 mb-2">即時監控</h4>
             <p className="text-sm text-gray-600">24/7 全天候貨櫃狀態追蹤</p>
