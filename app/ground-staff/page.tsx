@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Navigation from '../components/Navigation';
 import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
-import { Container, CargoItem } from '../types';
+import WeatherWidget from '../components/WeatherWidget';
+import { Container } from '../types';
 
 export default function GroundStaffPage() {
   const [containerNumber, setContainerNumber] = useState('');
@@ -15,6 +16,12 @@ export default function GroundStaffPage() {
   const [destination, setDestination] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // 模擬貨櫃數據
   const [containers] = useState<Container[]>([
@@ -94,6 +101,7 @@ export default function GroundStaffPage() {
       setWeight('');
       setBarcode('');
       setDestination('');
+      inputRef.current?.focus(); // Focus back to start for next item
       setTimeout(() => setShowSuccess(false), 3000);
     }, 500);
   };
@@ -105,11 +113,20 @@ export default function GroundStaffPage() {
       setShowScanner(false);
       setBarcode('849302194832');
       setContainerNumber('CNT-2024-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'));
-    }, 2000);
+    }, 1500);
   };
 
+  const destinations = [
+    { code: 'NRT', name: '日本成田' },
+    { code: 'ICN', name: '韓國仁川' },
+    { code: 'SIN', name: '新加坡樟宜' },
+    { code: 'BKK', name: '泰國曼谷' },
+    { code: 'HKG', name: '香港赤鱲角' },
+    { code: 'PVG', name: '上海浦東' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 relative">
+    <div className="min-h-screen bg-gray-50 relative">
       <Navigation />
 
       {/* Scanner Modal */}
@@ -119,6 +136,7 @@ export default function GroundStaffPage() {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-64 h-1 bg-red-500 shadow-[0_0_10px_red] animate-[scan_2s_ease-in-out_infinite]"></div>
             </div>
+            {/* Corners */}
             <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
             <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
             <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
@@ -133,196 +151,224 @@ export default function GroundStaffPage() {
 
       {/* Success Notification */}
       {showSuccess && (
-        <div className="fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-[slideIn_0.5s_ease-out]">
-          <div className="bg-white rounded-full p-1">
-            <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed top-24 right-4 lg:right-10 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-4 animate-[slideIn_0.5s_ease-out]">
+          <div className="bg-white/20 rounded-full p-2">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div>
-            <h4 className="font-bold">登記成功</h4>
+            <h4 className="font-bold text-lg">登記成功</h4>
             <p className="text-sm opacity-90">貨品已成功加入系統</p>
           </div>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">地勤人員操作介面</h1>
+      <div className="max-w-7xl mx-auto p-4 lg:p-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">地勤人員操作介面</h1>
+          <p className="text-gray-500 mt-1">快速登記與管理貨櫃狀態</p>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* 貨品裝入與登記 */}
-          <Card title="貨品裝入與登記">
-            <form onSubmit={handleRegisterCargo} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  掃描條碼 / 輸入貨櫃編號
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={barcode || containerNumber}
-                    onChange={(e) => {
-                      setBarcode(e.target.value);
-                      setContainerNumber(e.target.value); // Simple sync for demo
-                    }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="請掃描或輸入..."
-                    required
-                  />
+        <WeatherWidget />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+          {/* Main Registration Area - Takes up more space */}
+          <div className="lg:col-span-8">
+            <Card title="貨品裝入與登記" className="h-full">
+              <form onSubmit={handleRegisterCargo} className="space-y-6">
+
+                {/* Primary Action: Scan/Input */}
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    步驟 1: 掃描或輸入貨櫃
+                  </label>
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zm-2 7a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zm7-9a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4zm2 2V5h1v1h-1zM9 9a1 1 0 011-1h1a1 1 0 110 2H10a1 1 0 01-1-1zm-1 4a1 1 0 011-1h1a1 1 0 110 2H9a1 1 0 01-1-1zm4 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={barcode || containerNumber}
+                        onChange={(e) => {
+                          setBarcode(e.target.value);
+                          setContainerNumber(e.target.value);
+                        }}
+                        className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg transition-all"
+                        placeholder="請掃描或輸入貨櫃編號..."
+                        required
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleScan}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 shadow-sm transition-all active:scale-95"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      </svg>
+                      掃描
+                    </button>
+                  </div>
+                </div>
+
+                {/* Secondary: Details */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    步驟 2: 貨品詳情
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-1">
+                      <input
+                        type="text"
+                        value={cargoName}
+                        onChange={(e) => setCargoName(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="貨品名稱"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="數量"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        value={weight}
+                        onChange={(e) => setWeight(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="重量 (kg)"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Destination Quick Select */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    步驟 3: 選擇目的地
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                    {destinations.map((dest) => (
+                      <button
+                        key={dest.code}
+                        type="button"
+                        onClick={() => setDestination(dest.code)}
+                        className={`px-2 py-3 rounded-lg text-sm font-medium transition-all border ${destination === dest.code
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                          }`}
+                      >
+                        <div className="text-xs opacity-75">{dest.code}</div>
+                        <div>{dest.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
                   <button
-                    type="button"
-                    onClick={handleScan}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center gap-2 transition-colors"
+                    type="submit"
+                    className="w-full py-4 bg-gray-900 text-white rounded-xl hover:bg-black transition-all flex items-center justify-center gap-3 text-lg font-medium shadow-lg hover:shadow-xl transform active:scale-[0.99]"
                   >
+                    <span>確認登記</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
-                    掃描
                   </button>
                 </div>
-              </div>
+              </form>
+            </Card>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    貨品名稱
-                  </label>
-                  <input
-                    type="text"
-                    value={cargoName}
-                    onChange={(e) => setCargoName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="例如: 電子零件"
-                    required
-                  />
+          {/* Quick Search - Compact Side Panel */}
+          <div className="lg:col-span-4">
+            <Card title="快速查詢" className="h-full bg-slate-50 border-slate-200">
+              <div className="flex flex-col h-full">
+                <div className="mb-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="搜尋貨櫃..."
+                    />
+                    <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    數量
-                  </label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="數量"
-                    required
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    重量 (kg)
-                  </label>
-                  <input
-                    type="number"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="重量"
-                    required
-                  />
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-full text-xs font-medium hover:bg-gray-100">
+                    所有貨櫃
+                  </button>
+                  <button className="px-3 py-1.5 bg-blue-50 border border-blue-100 text-blue-600 rounded-full text-xs font-medium hover:bg-blue-100">
+                    裝載中
+                  </button>
+                  <button className="px-3 py-1.5 bg-green-50 border border-green-100 text-green-600 rounded-full text-xs font-medium hover:bg-green-100">
+                    運送中
+                  </button>
+                  <button className="px-3 py-1.5 bg-red-50 border border-red-100 text-red-600 rounded-full text-xs font-medium hover:bg-red-100">
+                    異常
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    目的地
-                  </label>
-                  <select
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    required
-                  >
-                    <option value="">請選擇目的地</option>
-                    <option value="NRT">日本成田 (NRT)</option>
-                    <option value="ICN">韓國仁川 (ICN)</option>
-                    <option value="SIN">新加坡樟宜 (SIN)</option>
-                    <option value="BKK">泰國曼谷 (BKK)</option>
-                  </select>
+
+                <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="text-center text-gray-400 py-8">
+                    <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <p className="text-sm">近期沒有查詢記錄</p>
+                  </div>
                 </div>
               </div>
-
-              <button
-                type="submit"
-                className="w-full px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                登記貨品
-              </button>
-            </form>
-          </Card>
-
-          {/* 貨櫃快速查詢 */}
-          <Card title="貨櫃快速查詢">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  搜尋條件
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  placeholder="輸入貨櫃編號、目的地或狀態..."
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200">
-                  全部
-                </button>
-                <button className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200">
-                  裝載中
-                </button>
-                <button className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm hover:bg-yellow-200">
-                  運送中
-                </button>
-                <button className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm hover:bg-red-200">
-                  異常
-                </button>
-              </div>
-              <div className="border-t border-gray-200 pt-4">
-                <p className="text-sm text-gray-500 text-center">
-                  請輸入搜尋條件以顯示結果
-                </p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
 
-        {/* 機場貨櫃狀態 */}
-        <Card title="機場貨櫃狀態">
+        {/* List Table */}
+        <Card title="今日登記記錄">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">貨櫃編號</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">狀態</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">位置</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">目的地</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">更新時間</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">操作</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">貨櫃編號</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">狀態</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">位置</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">目的地</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">更新時間</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100 bg-white">
                 {containers.map((container) => (
-                  <tr key={container.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {container.containerNumber}
+                  <tr key={container.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-900 font-mono">{container.containerNumber}</span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={container.status} />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{container.location.address}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{container.destination}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {container.updatedAt.toLocaleTimeString('zh-TW')}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{container.location.address}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{container.destination}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {container.updatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td className="px-4 py-3">
-                      <button className="text-gray-900 hover:underline text-sm">
-                        詳細資料
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 hover:underline">
+                        詳細
                       </button>
                     </td>
                   </tr>
